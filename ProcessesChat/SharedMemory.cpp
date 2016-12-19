@@ -10,7 +10,7 @@ LPCWSTR CharToLPCWSTR(const char* str)
 
 SharedMemory::SharedMemory()
 {
-    bool sharedMemCreator = false;
+    sharedMemCreator = false;
     hMapFile = OpenFileMapping(
         FILE_MAP_ALL_ACCESS,
         FALSE,     
@@ -38,14 +38,21 @@ SharedMemory::SharedMemory()
     if (sharedMemCreator)
     {
         ZeroMemory(sharedDataPointer, sharedMemSize);
+        CopyMemory(sharedDataPointer, new mutex(), sizeof(mutex));
+        /*InitializeCriticalSection((CRITICAL_SECTION*)sharedDataPointer);*/
     }
-    dataPointer = (char*)sharedDataPointer;
-    InitializeCriticalSection(&criticalSection);
+    mt = (mutex*)sharedDataPointer;
+    /*criticalSection = *((CRITICAL_SECTION*)sharedDataPointer);*/
+    dataPointer = (char*)sharedDataPointer + sizeof(mutex);
 }
 
 
 SharedMemory::~SharedMemory()
 {
+    if (sharedMemCreator)
+    {
+        delete(mt);
+    }
     UnmapViewOfFile(sharedDataPointer);
     CloseHandle(hMapFile);
 }
@@ -54,7 +61,8 @@ SharedMemory::~SharedMemory()
 void SharedMemory::write(char *str)
 {
     static int writeCount;
-    EnterCriticalSection(&criticalSection);
+    /*EnterCriticalSection(&criticalSection);*/
+    mt->lock();
     writeCount = strlen(str) + 1;
     if (writeCount > sharedMemSize)
     {
@@ -70,14 +78,16 @@ void SharedMemory::write(char *str)
         CopyMemory(dataPointer, str, writeCount);
         dataPointer += writeCount;
     }
-    LeaveCriticalSection(&criticalSection);
+    mt->unlock();
+    /*LeaveCriticalSection(&criticalSection);*/
 }
 
 
 void SharedMemory::read(char* &buff)
 {
     static int readCount;
-    EnterCriticalSection(&criticalSection);
+    /*EnterCriticalSection(&criticalSection);*/
+    mt->lock();
     if (strlen(dataPointer))
     {
         strcpy(buff, dataPointer);
@@ -87,5 +97,6 @@ void SharedMemory::read(char* &buff)
     {
         strcpy(buff, "");
     }
-    LeaveCriticalSection(&criticalSection);
+    mt->unlock();
+    /*LeaveCriticalSection(&criticalSection);*/
 }
