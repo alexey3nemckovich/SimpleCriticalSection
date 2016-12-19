@@ -4,14 +4,20 @@
 using namespace std;
 
 
+struct t
+{
+    HANDLE hMutex;
+};
+
+
 class SharedMemory
 {
 private:
     bool sharedMemCreator;
-    mutex *mt;
+    HANDLE mt;
     CRITICAL_SECTION criticalSection;
     const int sharedMemSize = 100;
-    const LPCWSTR sharedMemName = L"Global\\ProcessesSharedMemory";
+    const LPCWSTR sharedMemName = L"Global\\SharedMemory";
     HANDLE hMapFile;
     void *sharedDataPointer;
     char *dataPointer;

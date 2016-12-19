@@ -26,6 +26,7 @@ SharedMemory::SharedMemory()
             sharedMemSize,              
             sharedMemName
         );
+        int errCode = GetLastError();
         sharedMemCreator = true;
     }
     sharedDataPointer = MapViewOfFile(
@@ -38,10 +39,16 @@ SharedMemory::SharedMemory()
     if (sharedMemCreator)
     {
         ZeroMemory(sharedDataPointer, sharedMemSize);
-        CopyMemory(sharedDataPointer, new mutex(), sizeof(mutex));
+        mt = CreateMutex(NULL, NULL, NULL);
+        t tt;
+        tt.hMutex = mt;
+        CopyMemory(sharedDataPointer, &tt, sizeof(t));
         /*InitializeCriticalSection((CRITICAL_SECTION*)sharedDataPointer);*/
     }
-    mt = (mutex*)sharedDataPointer;
+    else
+    {
+        mt = ((t*)sharedDataPointer)->hMutex;
+    }
     /*criticalSection = *((CRITICAL_SECTION*)sharedDataPointer);*/
     dataPointer = (char*)sharedDataPointer + sizeof(mutex);
 }
@@ -51,7 +58,7 @@ SharedMemory::~SharedMemory()
 {
     if (sharedMemCreator)
     {
-        delete(mt);
+        //free handle
     }
     UnmapViewOfFile(sharedDataPointer);
     CloseHandle(hMapFile);
@@ -62,7 +69,7 @@ void SharedMemory::write(char *str)
 {
     static int writeCount;
     /*EnterCriticalSection(&criticalSection);*/
-    mt->lock();
+    WaitForSingleObject(mt, INFINITE);
     writeCount = strlen(str) + 1;
     if (writeCount > sharedMemSize)
     {
@@ -78,7 +85,8 @@ void SharedMemory::write(char *str)
         CopyMemory(dataPointer, str, writeCount);
         dataPointer += writeCount;
     }
-    mt->unlock();
+    ReleaseMutex(mt);
+    //PulseEvent(mt);
     /*LeaveCriticalSection(&criticalSection);*/
 }
 
@@ -87,7 +95,7 @@ void SharedMemory::read(char* &buff)
 {
     static int readCount;
     /*EnterCriticalSection(&criticalSection);*/
-    mt->lock();
+    WaitForSingleObject(mt, INFINITE);
     if (strlen(dataPointer))
     {
         strcpy(buff, dataPointer);
@@ -97,6 +105,7 @@ void SharedMemory::read(char* &buff)
     {
         strcpy(buff, "");
     }
-    mt->unlock();
+    ReleaseMutex(mt);
+    //PulseEvent(mt);
     /*LeaveCriticalSection(&criticalSection);*/
 }
