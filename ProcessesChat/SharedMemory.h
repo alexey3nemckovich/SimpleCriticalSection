@@ -1,28 +1,29 @@
 #pragma once
 #include <string>
 #include <mutex>
+#include <atomic>
+#include "CriticalSection.h"
 using namespace std;
-
-
-struct t
-{
-    HANDLE hMutex;
-};
 
 
 class SharedMemory
 {
 private:
-    bool sharedMemCreator;
-    HANDLE mt;
-    CRITICAL_SECTION criticalSection;
-    const int sharedMemSize = 100;
-    const LPCWSTR sharedMemName = L"Global\\SharedMemory";
+    //fields
+    int size;
+    string name;
     HANDLE hMapFile;
-    void *sharedDataPointer;
     char *dataPointer;
+    bool sharedMemCreator;
+    void *sharedDataPointer;
+    short *countLiveProcesses;
+    CriticalSection *criticalSection;
+    //methods
+    static HANDLE GetHandle(LPCWSTR lpSharedMemName);
+    static HANDLE Create(LPCWSTR lpSharedMemName, int size);
+    static void* GetDataPointer(HANDLE hShMemory, int size);
 public:
-    SharedMemory();
+    SharedMemory(string name, int size);
     ~SharedMemory();
     void write(char *buff);
     void read(char* &buff);

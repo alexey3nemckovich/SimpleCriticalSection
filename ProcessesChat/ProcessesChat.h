@@ -9,7 +9,7 @@ class ProcessesChat
 private:
     bool online;
     thread listenThread;
-    SharedMemory shareMem;
+    SharedMemory *sharedMem;
     friend void ListenMessages(ProcessesChat *pcChat);
 public:
     ProcessesChat();

@@ -4,6 +4,7 @@
 
 int main()
 {
-    ProcessesChat pcChat;
-    pcChat.StartChat();
+    ProcessesChat *pcChat = new ProcessesChat();
+    pcChat->StartChat();
+    delete(pcChat);
 }

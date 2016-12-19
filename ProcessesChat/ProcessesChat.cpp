@@ -8,13 +8,15 @@ void ListenMessages(ProcessesChat *pcChat);
 ProcessesChat::ProcessesChat()
 {
     online = true;
+    sharedMem = new SharedMemory("Global\\SharedMemory", 1000);
     listenThread = thread(ListenMessages, this);
 }
 
 
 ProcessesChat::~ProcessesChat()
 {
-
+    listenThread.join();
+    delete(sharedMem);
 }
 
 
@@ -25,9 +27,9 @@ void ProcessesChat::StartChat()
     {
         printf("Enter message of press 'Enter' with empty string to finish...\n");
         gets_s(str);
-        if (str != "")
+        if (strcmp(str, "") != 0)
         {
-            shareMem.write(str);
+            sharedMem->write(str);
         }
         else
         {
@@ -43,7 +45,7 @@ void ListenMessages(ProcessesChat *pcChat)
     char* s = str;
     while (pcChat->online)
     {
-        pcChat->shareMem.read(s);
+        pcChat->sharedMem->read(s);
         if (strlen(s) != 0)
         {
             printf("Message: %s\n", s);
