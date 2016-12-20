@@ -1,4 +1,6 @@
 #pragma once
+#include <thread>
+using namespace std;
 
 
 class CriticalSection
