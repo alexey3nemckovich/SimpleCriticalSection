@@ -22,7 +22,10 @@ bool CriticalSection::TryEnter()
 
 void CriticalSection::Enter()
 {
-    while (!TryEnter());
+    while (!TryEnter())
+    {
+        this_thread::yield();
+    }
 }
 
 
